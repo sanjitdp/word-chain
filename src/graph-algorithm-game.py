@@ -58,12 +58,9 @@ class Game:
                 was_first_move = False
 
             if self.minimizer()[0] > max_value:
-                print(max_value)
                 max_value = self.minimizer()[0]
                 move_start = move[0]
                 move_end = move[1]
-                print(self.minimizer()[0])
-                print(self.minimizer())
 
             if was_first_move:
                 self.first_move = True
@@ -96,7 +93,7 @@ class Game:
             self.node = move[0]
             self.g[move[0]][move[1]]['weight'] += 1
 
-            return min_value, move_start, move_end
+        return min_value, move_start, move_end
 
     def solve(self):
         while True:
@@ -116,4 +113,5 @@ class Game:
                 self.player_turn = 'A'
 
 
-print(Game().maximizer())
+u = Game().maximizer()
+print(u)
