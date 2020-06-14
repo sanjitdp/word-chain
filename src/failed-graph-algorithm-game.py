@@ -1,5 +1,6 @@
-
+"""
 import networkx as nx
+import time
 
 
 class Game:
@@ -8,7 +9,8 @@ class Game:
         self.first_move = True  # if it's the first move starting node doesn't matter
         self.player_turn = 'A'  # it's player A's turn
         self.g = nx.DiGraph()
-        self.g.add_weighted_edges_from([(1, 2, 1), (2, 3, 1), (3, 4, 1), (4, 1, 1), (2, 4, 1)])  # initializing graph
+        self.g.add_weighted_edges_from([(1, 2, 7), (2, 1, 6), (2, 3, 1), (3, 4, 1), (4, 1, 1), (2, 4, 1)])
+        # initializing graph
 
     def legal_moves(self):
         legal = []
@@ -39,14 +41,21 @@ class Game:
         else:
             return None
 
-    def maximizer(self):
+    def switch_turn(self):
+        if self.player_turn == 'A':
+            self.player_turn = 'B'
+        else:
+            self.player_turn = 'A'
+
+    def maximizer(self, alpha, beta):
         max_value = -2  # initializes max value to less than possible minimum
         move_start = None
         move_end = None
 
-        if self.evaluate() == 'A':  # check whether the game has ended and return
+        winner = self.evaluate()
+        if winner == 'A':  # check whether the game has ended and return
             return 1, 0, 0
-        elif self.evaluate() == 'B':
+        elif winner == 'B':
             return -1, 0, 0
 
         for move in self.legal_moves():
@@ -58,47 +67,49 @@ class Game:
                 was_first_move = True
             else:
                 was_first_move = False
-            if self.player_turn == 'A':
-                self.player_turn = 'B'
-            else:
-                self.player_turn = 'A'
+            self.switch_turn()
 
-            if self.minimizer()[0] > max_value:
+            next_min_value = self.minimizer(alpha, beta)
+            if next_min_value[0] > max_value:
                 # set the maximum value to the minimum value of the next move
-                max_value = self.minimizer()[0]
+                max_value = next_min_value[0]
                 move_start = move[0]
                 move_end = move[1]
 
             if was_first_move:  # pop and reset the board to its prior position
                 self.first_move = True
                 self.node = None
-            if not was_first_move:
+            else:
                 self.node = move[0]
             self.g[move[0]][move[1]]['weight'] += 1
-            if self.player_turn == 'A':
-                self.player_turn = 'B'
-            else:
-                self.player_turn = 'A'
+            self.switch_turn()
+
+            if max_value >= beta:
+                return max_value, move_start, move_end
+            if max_value > alpha:
+                alpha = max_value
 
         return max_value, move_start, move_end
         # return the maximum value (1 if win and -1 if lose) and end the turn
 
-    def minimizer(self):  # minimizes expected score every alternate turn, similar to maximizer
+    def minimizer(self, alpha, beta):  # minimizes expected score every alternate turn, similar to maximizer
         min_value = 2
         move_start = None
         move_end = None
 
-        if self.evaluate() == 'A':
+        winner = self.evaluate()
+        if winner == 'A':
             return 1, 0, 0
-        elif self.evaluate() == 'B':
+        elif winner == 'B':
             return -1, 0, 0
 
         for move in self.legal_moves():
             self.node = move[1]
             self.g[move[0]][move[1]]['weight'] -= 1
 
-            if self.maximizer()[0] < min_value:
-                min_value = self.maximizer()[0]
+            next_max_value = self.maximizer(alpha, beta)
+            if next_max_value[0] < min_value:
+                min_value = next_max_value[0]
                 move_start = move[0]
                 move_end = move[1]
 
@@ -109,12 +120,17 @@ class Game:
             else:
                 self.player_turn = 'B'
 
+            if min_value <= alpha:
+                return min_value, move_start, move_end
+            if min_value < beta:
+                beta = min_value
+
         return min_value, move_start, move_end
 
     def solve(self):  # maximizes/minimizes every alternate turn and returns the winner
         i = 0
         while True:
-            best_move = self.maximizer()
+            best_move = self.maximizer(-2, 2)
             if self.game_ended() and best_move[0] == 1:
                 return 'A wins the game.'
             elif self.game_ended() and best_move[0] == -1:
@@ -132,4 +148,8 @@ class Game:
                 self.first_move = False
 
 
-print(Game().solve())
+start_time = time.time()
+print(Game().solve(), '\n')
+end_time = time.time()
+print('Evaluation time: {}s'.format(end_time-start_time))
+"""
